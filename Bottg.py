@@ -4,10 +4,10 @@ import time
 import random
 
 # Инициализация бота
-TOKEN = "6763204256:AAEPsrEOtIqIeGg5t8Da1Ba8RXjGWliOnuA"
+TOKEN = "YOUR_TOKEN_HERE"
 bot = telebot.TeleBot(TOKEN)
 
-# Список администраторов
+# Список администраторов (включите своего админа для первоначального запуска)
 admins = {6321157988}
 
 # Хранение состояний пользователей
@@ -53,7 +53,7 @@ def list_commands(message):
     /ban <username> <duration> [причина] - Забанить пользователя на указанный срок
     /unban <username> - Разбанить пользователя
     /warn <username> [причина] - Выдать варн пользователю
-    /remove_warn <username> - Снять варн у пользователя
+    /unwarn <username> - Снять варн у пользователя
     /kick <username> [причина] - Кикнуть пользователя из чата
     /admins - Показать список администраторов
     /joke - Получить случайный анекдот
@@ -64,7 +64,7 @@ def list_commands(message):
 # Команда для получения списка администраторов
 @bot.message_handler(commands=['admins'])
 def list_admins(message):
-    admin_list = "\n".join(str(admin) for admin in admins)
+    admin_list = "\n".join(f"@{bot.get_chat(admin).username}" for admin in admins if bot.get_chat(admin).username)
     bot.reply_to(message, f"Список администраторов:\n{admin_list}")
 
 # Команда для случайного анекдота
