@@ -4,7 +4,7 @@ import time
 import random
 
 # Инициализация бота
-TOKEN = "6763204256:AAEPsrEOtIqIeGg5t8Da1Ba8RXjGWliOnuA"
+TOKEN = "YOUR_TOKEN_HERE"
 bot = telebot.TeleBot(TOKEN)
 
 # Список администраторов
@@ -34,52 +34,47 @@ facts = [
     "Один человеческий мозг генерирует больше электрических импульсов в течение одного дня, чем все телефоны мира, вместе взятые."
 ]
 
+def get_user_id(username):
+    """Получить user_id по юзернейму"""
+    try:
+        user = bot.get_chat(username)
+        return user.id
+    except Exception as e:
+        return None
+
 # Команда для получения списка команд
 @bot.message_handler(commands=['commands'])
 def list_commands(message):
     command_list = """
     Доступные команды:
-    /addadm <user_id> - Добавить администратора
-    /mute <user_id> <duration> [причина] - Замучить пользователя на указанный срок
-    /unmute <user_id> - Размутить пользователя
-    /ban <user_id> <duration> [причина] - Забанить пользователя на указанный срок
-    /unban <user_id> - Разбанить пользователя
-    /warn <user_id> [причина] - Выдать варн пользователю
-    /kick <user_id> [причина] - Кикнуть пользователя из чата
+    /addadm <username> - Добавить администратора
+    /mute <username> <duration> [причина] - Замучить пользователя на указанный срок
+    /unmute <username> - Размутить пользователя
+    /ban <username> <duration> [причина] - Забанить пользователя на указанный срок
+    /unban <username> - Разбанить пользователя
+    /warn <username> [причина] - Выдать варн пользователю
+    /remove_warn <username> - Снять варн у пользователя
+    /kick <username> [причина] - Кикнуть пользователя из чата
     /admins - Показать список администраторов
     /joke - Получить случайный анекдот
     /fact - Получить случайный факт
     """
     bot.reply_to(message, command_list)
 
-# Команда для получения списка администраторов
-@bot.message_handler(commands=['admins'])
-def list_admins(message):
-    admin_list = "\n".join(str(admin) for admin in admins)
-    bot.reply_to(message, f"Список администраторов:\n{admin_list}")
-
-# Команда для случайного анекдота
-@bot.message_handler(commands=['joke'])
-def random_joke(message):
-    joke = random.choice(jokes)
-    bot.reply_to(message, joke)
-
-# Команда для случайного факта
-@bot.message_handler(commands=['fact'])
-def random_fact(message):
-    fact = random.choice(facts)
-    bot.reply_to(message, fact)
-
 # Команда для добавления администраторов
 @bot.message_handler(commands=['addadm'])
 def add_admin(message):
     if message.from_user.id in admins:
         try:
-            new_admin_id = int(message.text.split()[1])
-            admins.add(new_admin_id)
-            bot.reply_to(message, f"Пользователь {new_admin_id} добавлен в администраторы.")
-        except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /addadm <user_id>")
+            username = message.text.split()[1]
+            user_id = get_user_id(username)
+            if user_id is not None:
+                admins.add(user_id)
+                bot.reply_to(message, f"Пользователь {username} добавлен в администраторы.")
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
+        except IndexError:
+            bot.reply_to(message, "Используйте: /addadm <username>")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -89,13 +84,17 @@ def mute(message):
     if message.from_user.id in admins:
         try:
             parts = message.text.split()
-            user_id = int(parts[1])
+            username = parts[1]
             duration = int(parts[2])
             reason = " ".join(parts[3:]) if len(parts) > 3 else "Причина не указана"
-            mute_status[user_id] = (time.time() + duration)
-            bot.reply_to(message, f"Пользователь {user_id} был замучен на {duration} секунд. Причина: {reason}.")
+            user_id = get_user_id(username)
+            if user_id is not None:
+                mute_status[user_id] = (time.time() + duration)
+                bot.reply_to(message, f"Пользователь {username} был замучен на {duration} секунд. Причина: {reason}.")
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /mute <user_id> <duration> [причина]")
+            bot.reply_to(message, "Используйте: /mute <username> <duration> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -104,14 +103,15 @@ def mute(message):
 def unmute(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
-            if user_id in mute_status:
+            username = message.text.split()[1]
+            user_id = get_user_id(username)
+            if user_id is not None and user_id in mute_status:
                 del mute_status[user_id]
-                bot.reply_to(message, f"Пользователь {user_id} был размучен.")
+                bot.reply_to(message, f"Пользователь {username} был размучен.")
             else:
-                bot.reply_to(message, f"Пользователь {user_id} не замучен.")
-        except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /unmute <user_id>")
+                bot.reply_to(message, f"Пользователь не найден или не замучен.")
+        except IndexError:
+            bot.reply_to(message, "Используйте: /unmute <username>")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -121,13 +121,17 @@ def ban(message):
     if message.from_user.id in admins:
         try:
             parts = message.text.split()
-            user_id = int(parts[1])
+            username = parts[1]
             duration = int(parts[2])
             reason = " ".join(parts[3:]) if len(parts) > 3 else "Причина не указана"
-            banned_users[user_id] = (time.time() + duration)
-            bot.reply_to(message, f"Пользователь {user_id} был забанен на {duration} секунд. Причина: {reason}.")
+            user_id = get_user_id(username)
+            if user_id is not None:
+                banned_users[user_id] = (time.time() + duration)
+                bot.reply_to(message, f"Пользователь {username} был забанен на {duration} секунд. Причина: {reason}.")
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /ban <user_id> <duration> [причина]")
+            bot.reply_to(message, "Используйте: /ban <username> <duration> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -136,14 +140,15 @@ def ban(message):
 def unban(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
-            if user_id in banned_users:
+            username = message.text.split()[1]
+            user_id = get_user_id(username)
+            if user_id is not None and user_id in banned_users:
                 del banned_users[user_id]
-                bot.reply_to(message, f"Пользователь {user_id} был разбанен.")
+                bot.reply_to(message, f"Пользователь {username} был разбанен.")
             else:
-                bot.reply_to(message, f"Пользователь {user_id} не забанен.")
-        except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /unban <user_id>")
+                bot.reply_to(message, f"Пользователь не найден или не забанен.")
+        except IndexError:
+            bot.reply_to(message, "Используйте: /unban <username>")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -153,19 +158,43 @@ def warn(message):
     if message.from_user.id in admins:
         try:
             parts = message.text.split()
-            user_id = int(parts[1])
+            username = parts[1]
             reason = " ".join(parts[2:]) if len(parts) > 2 else "Причина не указана"
-            warn_count[user_id] = warn_count.get(user_id, 0) + 1
-            bot.reply_to(message, f"Пользователь {user_id} получил варн. Всего варнов: {warn_count[user_id]}. Причина: {reason}.")
+            user_id = get_user_id(username)
+            if user_id is not None:
+                warn_count[user_id] = warn_count.get(user_id, 0) + 1
+                bot.reply_to(message, f"Пользователь {username} получил варн. Всего варнов: {warn_count[user_id]}. Причина: {reason}.")
 
-            # Проверка на три варна
-            if warn_count[user_id] >= 3:
-                ban_duration = 31536000  # Например, 1 год
-                banned_users[user_id] = (time.time() + ban_duration)
-                bot.reply_to(message, f"Пользователь {user_id} был забанен на 1 год за 3 варна.")
-                del warn_count[user_id]  # Сбросить счетчик варнов
+                # Проверка на три варна
+                if warn_count[user_id] >= 3:
+                    ban_duration = 31536000  # Например, 1 год
+                    banned_users[user_id] = (time.time() + ban_duration)
+                    bot.reply_to(message, f"Пользователь {username} был забанен на 1 год за 3 варна.")
+                    del warn_count[user_id]  # Сбросить счетчик варнов
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /warn <user_id> [причина]")
+            bot.reply_to(message, "Используйте: /warn <username> [причина]")
+    else:
+        bot.reply_to(message, "У вас нет прав для использования этой команды.")
+
+# Команда для снятия варна
+@bot.message_handler(commands=['unwarn'])
+def unwarn(message):
+    if message.from_user.id in admins:
+        try:
+            username = message.text.split()[1]
+            user_id = get_user_id(username)
+            if user_id is not None:
+                if user_id in warn_count and warn_count[user_id] > 0:
+                    warn_count[user_id] -= 1
+                    bot.reply_to(message, f"Варн у пользователя {username} снят. Осталось варнов: {warn_count[user_id]}.")
+                else:
+                    bot.reply_to(message, f"У пользователя {username} нет варнов для снятия.")
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
+        except (IndexError, ValueError):
+            bot.reply_to(message, "Используйте: /unwarn <username>")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -175,12 +204,16 @@ def kick(message):
     if message.from_user.id in admins:
         try:
             parts = message.text.split()
-            user_id = int(parts[1])
+            username = parts[1]
             reason = " ".join(parts[2:]) if len(parts) > 2 else "Причина не указана"
-            bot.kick_chat_member(message.chat.id, user_id)
-            bot.reply_to(message, f"Пользователь {user_id} был кикнут из чата. Причина: {reason}.")
+            user_id = get_user_id(username)
+            if user_id is not None:
+                bot.kick_chat_member(message.chat.id, user_id)
+                bot.reply_to(message, f"Пользователь {username} был кикнут из чата. Причина: {reason}.")
+            else:
+                bot.reply_to(message, "Пользователь не найден.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /kick <user_id> [причина]")
+            bot.reply_to(message, "Используйте: /kick <username> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
