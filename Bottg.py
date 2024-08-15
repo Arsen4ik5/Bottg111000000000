@@ -8,7 +8,7 @@ TOKEN = "6763204256:AAEPsrEOtIqIeGg5t8Da1Ba8RXjGWliOnuA"
 bot = telebot.TeleBot(TOKEN)
 
 # Список администраторов
-admins = {7069906494}
+admins = {6321157988}
 
 # Хранение состояний пользователей
 mute_status = {}
@@ -25,13 +25,13 @@ jokes = [
 facts = [
     "В среднем человек проведет 6 месяцев своей жизни на красный свет светофора.",
     "Около 25% костей человека находятся в руках и ногах.",
-    "Каждый год мы теряем около 70% своих вкусовых рецепторов."
-"Единственная часть тела, которая не имеет кровоснабжения, - роговица глаза. Кислород она получает непосредственно из воздуха."
-"Емкость мозга человека превышает 4 терабайта."
-"До 7 месяцев ребенок может дышать и глотать одновременно."
-"Ваш череп состоит из 29 различных костей."
-"При чихании все функции организма останавливаются, даже сердце."
-"Один человеческий мозг генерирует больше электрических импульсов в течение одного дня, чем все телефоны мира, вместе взятые."
+    "Каждый год мы теряем около 70% своих вкусовых рецепторов.",
+    "Единственная часть тела, которая не имеет кровоснабжения, - роговица глаза. Кислород она получает непосредственно из воздуха.",
+    "Емкость мозга человека превышает 4 терабайта.",
+    "До 7 месяцев ребенок может дышать и глотать одновременно.",
+    "Ваш череп состоит из 29 различных костей.",
+    "При чихании все функции организма останавливаются, даже сердце.",
+    "Один человеческий мозг генерирует больше электрических импульсов в течение одного дня, чем все телефоны мира, вместе взятые."
 ]
 
 # Команда для получения списка команд
@@ -40,12 +40,12 @@ def list_commands(message):
     command_list = """
     Доступные команды:
     /addadm <user_id> - Добавить администратора
-    /mute <user_id> <duration> - Замучить пользователя на указанный срок (в секундах)
+    /mute <user_id> <duration> [причина] - Замучить пользователя на указанный срок
     /unmute <user_id> - Размутить пользователя
-    /ban <user_id> <duration> - Забанить пользователя на указанный срок (в секундах)
+    /ban <user_id> <duration> [причина] - Забанить пользователя на указанный срок
     /unban <user_id> - Разбанить пользователя
-    /warn <user_id> - Выдать варн пользователю
-    /kick <user_id> - Кикнуть пользователя из чата
+    /warn <user_id> [причина] - Выдать варн пользователю
+    /kick <user_id> [причина] - Кикнуть пользователя из чата
     /admins - Показать список администраторов
     /joke - Получить случайный анекдот
     /fact - Получить случайный факт
@@ -88,12 +88,14 @@ def add_admin(message):
 def mute(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
-            duration = int(message.text.split()[2])
+            parts = message.text.split()
+            user_id = int(parts[1])
+            duration = int(parts[2])
+            reason = " ".join(parts[3:]) if len(parts) > 3 else "Причина не указана"
             mute_status[user_id] = (time.time() + duration)
-            bot.reply_to(message, f"Пользователь {user_id} был замучен на {duration} секунд.")
+            bot.reply_to(message, f"Пользователь {user_id} был замучен на {duration} секунд. Причина: {reason}.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /mute <user_id> <duration>")
+            bot.reply_to(message, "Используйте: /mute <user_id> <duration> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -118,12 +120,14 @@ def unmute(message):
 def ban(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
-            duration = int(message.text.split()[2])
+            parts = message.text.split()
+            user_id = int(parts[1])
+            duration = int(parts[2])
+            reason = " ".join(parts[3:]) if len(parts) > 3 else "Причина не указана"
             banned_users[user_id] = (time.time() + duration)
-            bot.reply_to(message, f"Пользователь {user_id} был забанен на {duration} секунд.")
+            bot.reply_to(message, f"Пользователь {user_id} был забанен на {duration} секунд. Причина: {reason}.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /ban <user_id> <duration>")
+            bot.reply_to(message, "Используйте: /ban <user_id> <duration> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -148,18 +152,20 @@ def unban(message):
 def warn(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
+            parts = message.text.split()
+            user_id = int(parts[1])
+            reason = " ".join(parts[2:]) if len(parts) > 2 else "Причина не указана"
             warn_count[user_id] = warn_count.get(user_id, 0) + 1
-            bot.reply_to(message, f"Пользователь {user_id} получил варн. Всего варнов: {warn_count[user_id]}")
-            
+            bot.reply_to(message, f"Пользователь {user_id} получил варн. Всего варнов: {warn_count[user_id]}. Причина: {reason}.")
+
             # Проверка на три варна
             if warn_count[user_id] >= 3:
-                ban_duration = 31536000  # Например, 1 час
+                ban_duration = 3600  # Например, 1 час
                 banned_users[user_id] = (time.time() + ban_duration)
-                bot.reply_to(message, f"Пользователь {user_id} был забанен на 1 год за 3 варна.")
+                bot.reply_to(message, f"Пользователь {user_id} был забанен на 1 час за 3 варна.")
                 del warn_count[user_id]  # Сбросить счетчик варнов
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /warn <user_id>")
+            bot.reply_to(message, "Используйте: /warn <user_id> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
@@ -168,11 +174,13 @@ def warn(message):
 def kick(message):
     if message.from_user.id in admins:
         try:
-            user_id = int(message.text.split()[1])
+            parts = message.text.split()
+            user_id = int(parts[1])
+            reason = " ".join(parts[2:]) if len(parts) > 2 else "Причина не указана"
             bot.kick_chat_member(message.chat.id, user_id)
-            bot.reply_to(message, f"Пользователь {user_id} был кикнут из чата.")
+            bot.reply_to(message, f"Пользователь {user_id} был кикнут из чата. Причина: {reason}.")
         except (IndexError, ValueError):
-            bot.reply_to(message, "Используйте: /kick <user_id>")
+            bot.reply_to(message, "Используйте: /kick <user_id> [причина]")
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
