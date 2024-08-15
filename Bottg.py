@@ -160,9 +160,9 @@ def warn(message):
 
             # Проверка на три варна
             if warn_count[user_id] >= 3:
-                ban_duration = 3600  # Например, 1 час
+                ban_duration = 31536000  # Например, 1 год
                 banned_users[user_id] = (time.time() + ban_duration)
-                bot.reply_to(message, f"Пользователь {user_id} был забанен на 1 час за 3 варна.")
+                bot.reply_to(message, f"Пользователь {user_id} был забанен на 1 год за 3 варна.")
                 del warn_count[user_id]  # Сбросить счетчик варнов
         except (IndexError, ValueError):
             bot.reply_to(message, "Используйте: /warn <user_id> [причина]")
