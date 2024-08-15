@@ -4,8 +4,8 @@ import time
 import random
 
 # Инициализация бота
-TOKEN = "YOUR_BOT_TOKEN"
-bot = telebot.TeleBot(6763204256:AAEPsrEOtIqIeGg5t8Da1Ba8RXjGWliOnuA)
+TOKEN = "6763204256:AAEPsrEOtIqIeGg5t8Da1Ba8RXjGWliOnuA"
+bot = telebot.TeleBot(TOKEN)
 
 # Список администраторов
 admins = set([7069906494])
