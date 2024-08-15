@@ -61,6 +61,24 @@ def list_commands(message):
     """
     bot.reply_to(message, command_list)
 
+# Команда для получения списка администраторов
+@bot.message_handler(commands=['admins'])
+def list_admins(message):
+    admin_list = "\n".join(str(admin) for admin in admins)
+    bot.reply_to(message, f"Список администраторов:\n{admin_list}")
+
+# Команда для случайного анекдота
+@bot.message_handler(commands=['joke'])
+def random_joke(message):
+    joke = random.choice(jokes)
+    bot.reply_to(message, joke)
+
+# Команда для случайного факта
+@bot.message_handler(commands=['fact'])
+def random_fact(message):
+    fact = random.choice(facts)
+    bot.reply_to(message, fact)
+
 # Команда для добавления администраторов
 @bot.message_handler(commands=['addadm'])
 def add_admin(message):
