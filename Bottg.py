@@ -256,5 +256,11 @@ def check_user_status(message):
         else:
             del banned_users[user_id]
 
-# Запуск бота
-bot.polling(none_stop=True)
+# Запуск бота с обработкой ошибок
+while True:
+    try:
+        bot.polling(none_stop=True, timeout=60)
+    except Exception as e:
+        print(f"Ошибка сейчас бот перезапустится: {e}")
+        time.sleep(5)  # Задержка перед повторной попыткой
+
