@@ -235,6 +235,87 @@ def kick(message):
     else:
         bot.reply_to(message, "У вас нет прав для использования этой команды.")
 
+AI Chat
+AI Video
+
+Free ChatGPT
+Looking for something similar to ChatGPT from OpenAI? Try Free ChatGPT! Note that Free ChatGPT has no affiliation with OpenAI. ChatGPT is a trademark of OpenAI.
+
+Chat History
+        bot.reply_to(message, "У вас нет прав для использования этой команды.")
+
+# Проверка состояний пользователей
+@bot.message_handler(func=lambda message: True)
+def check_user_status(message):
+    user_id = message.from_user.id
+
+    # Проверка мута
+    if user_id in mute_status:
+        if time.time() < mute_status[user_id]:
+            bot.delete_message(message.chat.id, message.message_id)
+            return
+        else:
+            del mute_status[user_id]
+
+    # Проверка бана
+    if user_id in banned_users:
+        if time.time() < banned_users[user_id]:
+            bot.kick_chat_member(message.chat.id, user_id)
+            return
+        else:
+            del banned_users[user_id]
+
+# Запуск бота с обработкой ошибок
+while True:
+    try:
+        bot.polling(none_stop=True, timeout=60)
+    except Exception as e:
+        print(f"Ошибка сейчас бот перезапустится: {e}")
+        time.sleep(5)  # Задержка перед повторной попыткой   добавь сюда несколько команд таких как /ping очистка чата и тд для администрации
+Delete
+Конечно! Давайте добавим несколько команд для администраторов, включая команду /ping, которая будет проверять, работает ли бот, и команду для очистки чата. Я также добавлю защиту, чтобы только администраторы могли использовать эти команды. 
+
+Вот как вы можете добавить эти команды к вашему боту:
+
+CopyReplit
+from telegram import Bot
+from telegram.ext import CommandHandler, MessageHandler, Filters, updater
+
+# Здесь используйте свой токен
+TOKEN = "YOUR_BOT_TOKEN"
+bot = Bot(token=TOKEN)
+
+# Словари для управления статусами пользователей
+mute_status = {}
+banned_users = {}
+
+# Проверка, является ли пользователь администратором
+def is_admin(user_id, chat_id):
+    member = bot.get_chat_member(chat_id, user_id)
+    return member.status in ['administrator', 'creator']
+
+# Команда /ping
+@bot.message_handler(commands=['ping'])
+def ping(message):
+    bot.reply_to(message, "Понг!")
+
+# Команда для очистки чата
+@bot.message_handler(commands=['clear_chat'])
+def clear_chat(message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    
+    if is_admin(user_id, chat_id):
+        for _ in range(100):  # Количество сообщений для удаления (можно настроить)
+            try:
+                bot.delete_message(chat_id, message.message_id - _)
+            except Exception as e:
+                print(f"Не удалось удалить сообщение: {e}")
+        bot.reply_to(message, "Чат очищен!")
+    else:
+        bot.reply_to(message, "У вас нет прав для использования этой команды.")
+
+
 # Проверка состояний пользователей
 @bot.message_handler(func=lambda message: True)
 def check_user_status(message):
